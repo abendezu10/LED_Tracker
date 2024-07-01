@@ -1,4 +1,7 @@
 #include "main.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 
 UART_HandleTypeDef huart1;
@@ -7,11 +10,17 @@ UART_HandleTypeDef huart1;
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
 static void MX_USART1_UART_Init(void);
+int8_t readUserInput(void);
+void processUserInput(int8_t opt);
+
+__IO ITStatus UartReady = SET;
+int time = 0;
+char readBuf[1];
 
 
 int main(void)
 {
-
+	uint8_t opt = 0;
 
   HAL_Init();
 
@@ -33,6 +42,13 @@ int main(void)
   while (1)
   {
 
+	  opt = readUserInput();
+	  if(opt > 0){
+		 processUserInput(opt);
+
+	  }
+
+
 	  HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_0);
 	  HAL_Delay(500);
 
@@ -43,6 +59,43 @@ int main(void)
 	  HAL_Delay(500);
 
   }
+
+}
+
+void processUserInput(int8_t opt){
+
+	if(opt == 1){
+		HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_5);
+
+	}
+
+
+}
+
+
+int8_t readUserInput(void){
+	int8_t retVal = -1;
+
+	if(UartReady == SET){
+
+		UartReady = RESET;
+		HAL_UART_Receive_IT(&huart1, (uint8_t*)readBuf, 1);
+		retVal = atoi(readBuf);
+
+	}
+
+		return retVal;
+
+}
+
+void USART1_IRQHandler(void){
+
+	HAL_UART_IRQHandler(&huart1);
+}
+
+void HAL_UART_RxCpltCallback(UART_HandleTypeDef *UartHandle){
+
+	UartReady = SET;
 
 }
 
@@ -118,6 +171,8 @@ static void MX_GPIO_Init(void)
   HAL_GPIO_WritePin(GPIOA, GPIO_PIN_1, GPIO_PIN_RESET);
 
   HAL_GPIO_WritePin(GPIOA, GPIO_PIN_6, GPIO_PIN_RESET);
+
+
 
   GPIO_InitStruct.Pin = GPIO_PIN_5;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
