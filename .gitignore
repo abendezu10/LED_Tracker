@@ -1,0 +1,75 @@
+# STM32CubeIDE specific files
+*.ioc
+*.launch
+*.log
+
+# STM32CubeIDE generated files
+/.settings/
+/Debug/
+/Release/
+/build/
+
+# Object files
+*.o
+*.obj
+*.d
+*.lst
+
+# Libraries
+*.lib
+*.a
+
+# Executables
+*.elf
+*.axf
+*.bin
+*.hex
+*.map
+
+# Listings
+*.map
+*.lst
+*.srec
+
+# IntelliSense and indexing files
+*.d
+*.dep
+*.pdsc
+
+# Temporary files
+*.tmp
+*.temp
+
+# Backup files
+*~
+*.bak
+*.swp
+*.swo
+*.old
+
+# Other IDE-specific files
+.vscode/
+.idea/
+*.code-workspace
+*.cproject
+*.project
+
+# Compiled Dynamic libraries
+*.so
+*.dylib
+*.dll
+
+# Compiled Static libraries
+*.a
+*.lib
+
+# Logs
+*.log
+
+# User specific files
+*.user
+*.settings
+*.workspace
+*.sublime-workspace
+*.sublime-project
+
