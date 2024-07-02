@@ -1,26 +1,25 @@
 #include "main.h"
 #include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
+#include <stdlib.h>
 
 
-UART_HandleTypeDef huart1;
+UART_HandleTypeDef huart2;
+char readBuf[1];
+__IO ITStatus UartReady = SET;
 
 
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
-static void MX_USART1_UART_Init(void);
+static void MX_USART2_UART_Init(void);
+uint8_t processUserInput(uint8_t opt);
 int8_t readUserInput(void);
-void processUserInput(int8_t opt);
-
-__IO ITStatus UartReady = SET;
-int time = 0;
-char readBuf[1];
 
 
 int main(void)
 {
 	uint8_t opt = 0;
+
 
   HAL_Init();
 
@@ -29,74 +28,68 @@ int main(void)
 
 
   MX_GPIO_Init();
-  MX_USART1_UART_Init();
+  MX_USART2_UART_Init();
 
-  HAL_NVIC_SetPriority(USART1_IRQn, 0x0, 0x0);
-  HAL_NVIC_EnableIRQ(USART1_IRQn);
-
-
-
-
+  HAL_NVIC_SetPriority(USART2_IRQn, 0,0);
+  HAL_NVIC_EnableIRQ(USART2_IRQn);
 
 
   while (1)
   {
-
 	  opt = readUserInput();
 	  if(opt > 0){
-		 processUserInput(opt);
-
+		  processUserInput(opt);
 	  }
 
-
 	  HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_0);
-	  HAL_Delay(500);
+	  HAL_Delay(250);
 
 	  HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_1);
-	  HAL_Delay(500);
+	  HAL_Delay(250);
 
-	  HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_6);
-	  HAL_Delay(500);
+	 HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_6);
+	 HAL_Delay(250);
+
+
 
   }
 
 }
 
-void processUserInput(int8_t opt){
+void USART2_IRQHandler(void){
+	HAL_UART_IRQHandler(&huart2);
 
-	if(opt == 1){
-		HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_5);
-
-	}
-
-
-}
-
-
-int8_t readUserInput(void){
-	int8_t retVal = -1;
-
-	if(UartReady == SET){
-
-		UartReady = RESET;
-		HAL_UART_Receive_IT(&huart1, (uint8_t*)readBuf, 1);
-		retVal = atoi(readBuf);
-
-	}
-
-		return retVal;
-
-}
-
-void USART1_IRQHandler(void){
-
-	HAL_UART_IRQHandler(&huart1);
 }
 
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *UartHandle){
 
 	UartReady = SET;
 
+
+}
+
+int8_t readUserInput(void){
+	int8_t retVal = -1;
+
+	if(UartReady == SET){
+		UartReady = RESET;
+		HAL_UART_Receive_IT(&huart2, (uint8_t*) readBuf, 1);
+		retVal = atoi(readBuf);
+	}
+
+	return retVal;
+
+}
+
+uint8_t processUserInput(uint8_t opt){
+	switch(opt){
+
+	case 1:
+		HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_5);
+		break;
+	}
+
+	return 1;
 }
 
 
@@ -110,7 +103,6 @@ void SystemClock_Config(void)
   __HAL_PWR_VOLTAGESCALING_CONFIG(PWR_REGULATOR_VOLTAGE_SCALE2);
 
 
-
   RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI;
   RCC_OscInitStruct.HSIState = RCC_HSI_ON;
   RCC_OscInitStruct.HSICalibrationValue = RCC_HSICALIBRATION_DEFAULT;
@@ -119,7 +111,6 @@ void SystemClock_Config(void)
   {
     Error_Handler();
   }
-
 
 
   RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK|RCC_CLOCKTYPE_SYSCLK
@@ -135,20 +126,18 @@ void SystemClock_Config(void)
   }
 }
 
-
-static void MX_USART1_UART_Init(void)
+static void MX_USART2_UART_Init(void)
 {
 
-
-  huart1.Instance = USART1;
-  huart1.Init.BaudRate = 115200;
-  huart1.Init.WordLength = UART_WORDLENGTH_8B;
-  huart1.Init.StopBits = UART_STOPBITS_1;
-  huart1.Init.Parity = UART_PARITY_NONE;
-  huart1.Init.Mode = UART_MODE_TX_RX;
-  huart1.Init.HwFlowCtl = UART_HWCONTROL_NONE;
-  huart1.Init.OverSampling = UART_OVERSAMPLING_16;
-  if (HAL_UART_Init(&huart1) != HAL_OK)
+  huart2.Instance = USART2;
+  huart2.Init.BaudRate = 115200;
+  huart2.Init.WordLength = UART_WORDLENGTH_8B;
+  huart2.Init.StopBits = UART_STOPBITS_1;
+  huart2.Init.Parity = UART_PARITY_NONE;
+  huart2.Init.Mode = UART_MODE_TX_RX;
+  huart2.Init.HwFlowCtl = UART_HWCONTROL_NONE;
+  huart2.Init.OverSampling = UART_OVERSAMPLING_16;
+  if (HAL_UART_Init(&huart2) != HAL_OK)
   {
     Error_Handler();
   }
@@ -161,47 +150,25 @@ static void MX_GPIO_Init(void)
 {
 	GPIO_InitTypeDef GPIO_InitStruct = {0};
 
-
   __HAL_RCC_GPIOA_CLK_ENABLE();
 
   HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_PIN_RESET);
 
-  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_0, GPIO_PIN_RESET);
 
-  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_1, GPIO_PIN_RESET);
+   GPIO_InitStruct.Pin = GPIO_PIN_13;
+   GPIO_InitStruct.Mode = GPIO_MODE_IT_FALLING;
+   GPIO_InitStruct.Pull = GPIO_NOPULL;
+   HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
-  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_6, GPIO_PIN_RESET);
 
-
-
-  GPIO_InitStruct.Pin = GPIO_PIN_5;
-  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
-
-  GPIO_InitStruct.Pin = GPIO_PIN_0;
-    GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-    GPIO_InitStruct.Pull = GPIO_NOPULL;
-    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-    HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
-
-    GPIO_InitStruct.Pin = GPIO_PIN_1;
-      GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-      GPIO_InitStruct.Pull = GPIO_NOPULL;
-      GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-      HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
-
-      GPIO_InitStruct.Pin = GPIO_PIN_6;
-        GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-        GPIO_InitStruct.Pull = GPIO_NOPULL;
-        GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-        HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
-
+   GPIO_InitStruct.Pin = GPIO_PIN_5 | GPIO_PIN_0 | GPIO_PIN_1 | GPIO_PIN_6;
+   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+   GPIO_InitStruct.Pull = GPIO_NOPULL;
+   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
 
 }
-
 
 void Error_Handler(void)
 {
@@ -214,18 +181,9 @@ void Error_Handler(void)
 }
 
 #ifdef  USE_FULL_ASSERT
-/**
-  * @brief  Reports the name of the source file and the source line number
-  *         where the assert_param error has occurred.
-  * @param  file: pointer to the source file name
-  * @param  line: assert_param error line source number
-  * @retval None
-  */
+
 void assert_failed(uint8_t *file, uint32_t line)
 {
-  /* USER CODE BEGIN 6 */
-  /* User can add his own implementation to report the file name and line number,
-     ex: printf("Wrong parameters value: file %s on line %d\r\n", file, line) */
-  /* USER CODE END 6 */
+
 }
-#endif /* USE_FULL_ASSERT */
+#endif
